@@ -25,3 +25,6 @@
 [submodule "chipwhisperer-minimal"]
 	path = chipwhisperer-minimal
 	url = https://github.com/newaetech/chipwhisperer-minimal.git
+[submodule "pqm4"]
+	path = pqm4
+	url = https://github.com/mupq/pqm4.git
