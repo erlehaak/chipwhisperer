@@ -105,6 +105,10 @@ int main(void)
 	putch('\n');
 	*/
 
+    unsigned char sk[KYBER_SECRETKEYBYTES];
+    unsigned char pk[KYBER_PUBLICKEYBYTES];
+    crypto_kem_keypair(*pk, *sk);
+
 	simpleserial_init();
 #if SS_VER != SS_VER_2_1
 	simpleserial_addcmd('p', 16, get_pt);
