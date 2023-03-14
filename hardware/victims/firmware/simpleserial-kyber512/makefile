@@ -28,6 +28,16 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 
+TGT_CFLAGS	= -O2 \
+		  -Wall -Wextra -Wimplicit-function-declaration \
+		  -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
+		  -Wundef -Wshadow \
+		  -I../../../include -fno-common \
+		  -mcpu=cortex-m4 -mthumb -Wstrict-prototypes \
+		  -ffunction-sections -fdata-sections -MD \
+		  -mfloat-abi=hard -mfpu=fpv4-sp-d16 -DLPC43XX -DLPC43XX_M4
+
+
 # Target file name (without extension).
 # This is the name of the compiled .hex file.
 TARGET = simpleserial-kyber512
