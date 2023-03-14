@@ -47,10 +47,27 @@ SRC += keccakf1600.c
 SRC += symmetric-fips202.c
 SRC += cbd.c
 SRC += ntt.c
+SRC += crypto_hashblocks_sha512.c
+SRC += kem.c
+SRC += hal-mps2.c
+SRC += hal-opencm3.c
+SRC += macros.i
+SRC += nistseedexpander.c
+SRC += sha2.c
+SRC += sp800-185.c
+SRC += test.c
+SRC += verify.c
 
 #Asembly source files
 
 ASRC += reduce.S
+ASRC += crypto_hashblocks_sha512_inner32.s
+ASRC += fastaddsub.S
+ASRC += fastbasemul.S
+ASRC += fastinvntt.S
+ASRC += fastntt.S
+ASRC += keccakf1600.S
+ASRC += poly_asm.S
 ASRC += matacc_asm.S 
 
 # -----------------------------------------------------------------------------
