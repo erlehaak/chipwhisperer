@@ -37,6 +37,11 @@ TARGET = simpleserial-kyber512
 SRC += simpleserial-kyber512.c
 
 SRC += indcpa.c
+SRC += randombytes.c 
+SRC += flips202.c 
+SRC += poly.c
+SRC += polyvec.c
+SRC += matacc.c
 # -----------------------------------------------------------------------------
 
 #ifeq ($(CRYPTO_OPTIONS),)
