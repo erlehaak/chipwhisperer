@@ -87,5 +87,3 @@ int randombytes(uint8_t* buf, size_t xlen)
   }
   return 0;
 }
-
-#endif
