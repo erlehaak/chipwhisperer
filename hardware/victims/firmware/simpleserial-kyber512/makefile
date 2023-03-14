@@ -42,6 +42,7 @@ SRC += fips202.c
 SRC += poly.c
 SRC += polyvec.c
 SRC += matacc.c
+SRC += matacc.i
 SRC += keccakf1600.c
 SRC += symmetric-fips202.c
 SRC += cbd.c
