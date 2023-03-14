@@ -49,9 +49,6 @@ SRC += cbd.c
 SRC += ntt.c
 SRC += crypto_hashblocks_sha512.c
 SRC += kem.c
-SRC += hal-mps2.c
-SRC += hal-opencm3.c
-SRC += macros.i
 SRC += nistseedexpander.c
 SRC += sha2.c
 SRC += sp800-185.c
@@ -60,6 +57,7 @@ SRC += verify.c
 
 #Asembly source files
 
+ASRC += macros.i
 ASRC += reduce.S
 ASRC += crypto_hashblocks_sha512_inner32.s
 ASRC += fastaddsub.S
