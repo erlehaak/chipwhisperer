@@ -35,6 +35,8 @@ TARGET = simpleserial-kyber512
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += simpleserial-kyber512.c
+
+SRC += indcpa.c
 # -----------------------------------------------------------------------------
 
 #ifeq ($(CRYPTO_OPTIONS),)
