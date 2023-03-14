@@ -22,7 +22,7 @@
 
 #include "simpleserial.h"
 
-#include "kyber512_m4fspeed/kem.c"
+#include "kem.c"
 
 uint8_t get_key(uint8_t* k, uint8_t len)
 {
