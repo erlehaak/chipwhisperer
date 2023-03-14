@@ -38,7 +38,7 @@ SRC += simpleserial-kyber512.c
 
 SRC += indcpa.c
 SRC += randombytes.c 
-SRC += flips202.c 
+SRC += fips202.c 
 SRC += poly.c
 SRC += polyvec.c
 SRC += matacc.c
