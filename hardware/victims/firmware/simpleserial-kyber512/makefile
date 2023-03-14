@@ -42,6 +42,16 @@ SRC += fips202.c
 SRC += poly.c
 SRC += polyvec.c
 SRC += matacc.c
+SRC += keccakf1600.c
+SRC += symmetric-fips202.c
+SRC += cbd.c
+SRC += ntt.c
+
+#Asembly source files
+
+ASRC += reduce.S
+ASRC += matacc_asm.S 
+
 # -----------------------------------------------------------------------------
 
 #ifeq ($(CRYPTO_OPTIONS),)
