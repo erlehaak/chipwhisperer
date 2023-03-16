@@ -105,9 +105,18 @@ int main(void)
 	putch('\n');
 	*/
 
+    //Test if Kyber is running
     unsigned char sk[KYBER_SECRETKEYBYTES];
     unsigned char pk[KYBER_PUBLICKEYBYTES];
-    crypto_kem_keypair(*pk, *sk);
+    unsigned char ss[KYBER_SSBYTES];
+    unsigned char send[KYBER_CIPHERTEXTBYTES];
+
+    crypto_kem_keypair(pk, sk);
+    
+    crypto_kem_enc(send, ss, pk);
+
+    crypto_kem_dec(ss, send, sk);
+
 
 	simpleserial_init();
 #if SS_VER != SS_VER_2_1
