@@ -71,7 +71,7 @@ static int test_keys(void)
   //Alice uses Bobs response to get her secret key
   MUPQ_crypto_kem_dec(key_a+8, sendb+8, sk_a+8);
 
-  simpleserial_put('1', 16, pk);
+  simpleserial_put('z', 16, pk);
   return 0;
 }
 
@@ -85,7 +85,9 @@ int main(void)
 
   simpleserial_init();
 
-  test_keys();
+  //test_keys();
+
+  simpleserial_addcmd('k', 16, test_keys);
 
   while(1)
 		simpleserial_get();
