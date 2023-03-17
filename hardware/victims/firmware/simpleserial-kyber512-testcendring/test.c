@@ -1,6 +1,6 @@
-#include "../kyber512clean/randombytes.h"
+#include "randombytes.h"
 #include "../hal/hal.h"
-#include "../kyber512clean/api.h"
+#include "kem.h"
 #include "simpleserial.h"
 
 #include <string.h>
@@ -53,16 +53,15 @@ static int test_keys(void)
   unsigned char sendb[MUPQ_CRYPTO_CIPHERTEXTBYTES+16];
   unsigned char sk_a[MUPQ_CRYPTO_SECRETKEYBYTES+16];
 
- // write_canary(key_a); write_canary(key_a+sizeof(key_a)-8);
- // write_canary(key_b); write_canary(key_b+sizeof(key_b)-8);
+ // write_canary(key_a); write_canary(key_a+sizeof(key_a));
+ // write_canary(key_b); write_canary(key_b+sizeof(key_b));
  // write_canary(pk); write_canary(pk+sizeof(pk)-8);
  // write_canary(sendb); write_canary(sendb+sizeof(sendb)-8);
- // write_canary(sk_a); write_canary(sk_a+sizeof(sk_a)-8);
+ // write_canary(sk_a); write_canary(sk_a+sizeof(sk_a)-);
 
   simpleserial_put('r', 16, pk);
-
   //Alice generates a public key
-  MUPQ_crypto_kem_keypair(pk+8, sk_a+8);
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk+8, sk_a+8);
 
 
   //Bob derives a secret key and creates a response

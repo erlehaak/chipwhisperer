@@ -32,10 +32,20 @@
 # This is the name of the compiled .hex file.
 TARGET = simpleserial-kyber512-testcendring
 
+
 # List C source files here.
 # Header files (.h) are automatically pulled in.
 SRC += test.c
-
+SRC += kem.c
+SRC += fips202.c
+SRC += indcpa.c
+SRC += randombytes.c
+SRC += symmetric-shake.c
+SRC += poly.c
+SRC += polyvec.c
+SRC += cbd.c
+SRC += ntt.c
+SRC += reduce.c
 
 CRYPTO_TARGET = NONE
 # -----------------------------------------------------------------------------
