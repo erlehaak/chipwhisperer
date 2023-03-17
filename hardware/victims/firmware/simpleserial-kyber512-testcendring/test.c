@@ -36,9 +36,18 @@ static void write_canary(uint8_t *d) {
   }
 }
 
+struct test
+{
+  unsigned char key_a[MUPQ_CRYPTO_BYTES+16], key_b[MUPQ_CRYPTO_BYTES+16];
+  unsigned char pk[MUPQ_CRYPTO_PUBLICKEYBYTES+16];
+  unsigned char sendb[MUPQ_CRYPTO_CIPHERTEXTBYTES+16];
+  unsigned char sk_a[MUPQ_CRYPTO_SECRETKEYBYTES+16];
+};
+
 
 static int test_keys(void)
 {
+  
   unsigned char key_a[MUPQ_CRYPTO_BYTES+16], key_b[MUPQ_CRYPTO_BYTES+16];
   unsigned char pk[MUPQ_CRYPTO_PUBLICKEYBYTES+16];
   unsigned char sendb[MUPQ_CRYPTO_CIPHERTEXTBYTES+16];
@@ -50,39 +59,19 @@ static int test_keys(void)
  // write_canary(sendb); write_canary(sendb+sizeof(sendb)-8);
  // write_canary(sk_a); write_canary(sk_a+sizeof(sk_a)-8);
 
+  simpleserial_put('r', 16, pk);
 
   //Alice generates a public key
   MUPQ_crypto_kem_keypair(pk+8, sk_a+8);
-  //hal_send_str("DONE key pair generation!");
+
 
   //Bob derives a secret key and creates a response
   MUPQ_crypto_kem_enc(sendb+8, key_b+8, pk+8);
-  //hal_send_str("DONE encapsulation!");
 
   //Alice uses Bobs response to get her secret key
   MUPQ_crypto_kem_dec(key_a+8, sendb+8, sk_a+8);
-  //hal_send_str("DONE decapsulation!");
 
-  /*
-  if(memcmp(key_a+8, key_b+8, MUPQ_CRYPTO_BYTES))
-  {
-    hal_send_str("ERROR KEYS\n");
-  }
-  else if(check_canary(key_a) || check_canary(key_a+sizeof(key_a)-8) ||
-          check_canary(key_b) || check_canary(key_b+sizeof(key_b)-8) ||
-          check_canary(pk) || check_canary(pk+sizeof(pk)-8) ||
-          check_canary(sendb) || check_canary(sendb+sizeof(sendb)-8) ||
-          check_canary(sk_a) || check_canary(sk_a+sizeof(sk_a)-8))
-  {
-    hal_send_str("ERROR canary overwritten\n");
-  }
-  else
-  {
-    hal_send_str("OK KEYS\n");
-  }
-}
-*/
-
+  simpleserial_put('1', 16, pk);
   return 0;
 }
 
@@ -90,12 +79,16 @@ static int test_keys(void)
 
 int main(void)
 {
-  //hal_setup(CLOCK_FAST);
+  platform_init();
+	init_uart();
+	trigger_setup();
 
-  // marker for automated testing
-  //hal_send_str("==========================");
+  simpleserial_init();
+
   test_keys();
-  //hal_send_str("#");
 
+  while(1)
+		simpleserial_get();
+ 
   return 0;
 }
