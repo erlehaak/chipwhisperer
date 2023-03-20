@@ -46,6 +46,7 @@ SRC += polyvec.c
 SRC += cbd.c
 SRC += ntt.c
 SRC += reduce.c
+SRC += verify.c
 
 CRYPTO_TARGET = NONE
 # -----------------------------------------------------------------------------

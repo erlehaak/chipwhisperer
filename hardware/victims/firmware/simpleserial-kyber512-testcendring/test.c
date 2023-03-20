@@ -12,7 +12,7 @@ static int test_keys(void)
   unsigned char ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
   unsigned char send[KYBER_CIPHERTEXTBYTES];
   
-  simpleserial_put('r', 16, pk);
+  simpleserial_put('r', 32, pk);
   //Alice generates a public key
   PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
 
@@ -36,7 +36,7 @@ int main(void)
 
   simpleserial_init();
 
-  simpleserial_addcmd('k', 16, test_keys);
+  simpleserial_addcmd('k', 128, test_keys);
 
   while(1)
 		simpleserial_get();
