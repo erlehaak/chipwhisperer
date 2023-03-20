@@ -17,10 +17,10 @@ static int test_keys(void)
   PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
 
   //Bob derives a secret key and creates a response
-  MUPQ_crypto_kem_enc(send, ss_b, pk);
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(send, ss_b, pk);
 
   //Alice uses Bobs response to get her secret key
-  MUPQ_crypto_kem_dec(ss_a, send, sk);
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss_a, send, sk);
 
   simpleserial_put('f', 16, pk);
   return 0;
