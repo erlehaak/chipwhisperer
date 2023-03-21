@@ -31,10 +31,20 @@ static int test_keys(void)
 static int get_pk(void)
 {
   int i;
+  int len = KYBER_PUBLICKEYBYTES;
 
-  for (i = 0; i < KYBER_PUBLICKEYBYTES; i += 32) {
+  for (i = 0; i < ; i += 32) {
         char chunk[33]; // 32 chars plus a null terminator
-        strncpy(chunk, pk + i, 32); // copy 32 chars into the chunk array
+        int chunk_len = 32;
+        
+        if (i + chunk_len > len) {
+          chunk_len = len - i;
+        }
+
+        strncpy(chunk, pk + i, chunk_len); // copy chunk len chars into the chunk array
+        for (int j = chunk_len; j < 32; j++) {
+          chunk[j] = 'x'; // Fill remainder of chunc with x
+        }
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('r', 32, chunk);
   }
