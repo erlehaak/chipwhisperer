@@ -28,7 +28,7 @@ static int test_keys(void)
   return 0;
 }
 
-uint8_t get_pk(void)
+static int get_pk(void)
 {
   int i;
 
@@ -38,6 +38,7 @@ uint8_t get_pk(void)
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('r', 32, chunk);
   }
+  return 0;
 }
 
 
