@@ -26,6 +26,10 @@ static int test_keys(void)
   return 0;
 }
 
+static uint8_t get_pk(void)
+{
+  return pk;
+}
 
 
 int main(void)
@@ -37,6 +41,7 @@ int main(void)
   simpleserial_init();
 
   simpleserial_addcmd('k', 128, test_keys);
+  simpleserial_addcmd('p', 128, get_pk);
 
   while(1)
 		simpleserial_get();
