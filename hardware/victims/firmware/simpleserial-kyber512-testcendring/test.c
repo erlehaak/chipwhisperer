@@ -10,11 +10,13 @@ unsigned char pk[KYBER_PUBLICKEYBYTES];
 unsigned char ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
 unsigned char send[KYBER_CIPHERTEXTBYTES];
 
+int i = 0;
+
 static int test_keys(void)
 {
   
   
-  simpleserial_put('r', 32, pk);
+  simpleserial_put('r', 48, pk);
   //Alice generates a public key
   PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
 
@@ -24,30 +26,31 @@ static int test_keys(void)
   //Alice uses Bobs response to get her secret key
   //PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss_a, send, sk);
 
-  simpleserial_put('f', 16, pk);
+  simpleserial_put('f', 48, pk);
   return 0;
 }
 
 static int get_pk(void)
 {
-  int i;
+  
   int len = KYBER_PUBLICKEYBYTES;
 
-  for (i = 0; i < ; i += 32) {
-        char chunk[33]; // 32 chars plus a null terminator
-        int chunk_len = 32;
-        
-        if (i + chunk_len > len) {
-          chunk_len = len - i;
-        }
+  if (i < len) {
+        char chunk[97]; // 32 chars plus a null terminator       
+        strncpy(chunk, pk + i, 96); // copy chunk 96 into the chunk array        
+        chunk[96] = '\0'; // add a null terminator to the end of the chunk
+        simpleserial_put('p', 96, chunk);
+        i += 96;
 
-        strncpy(chunk, pk + i, chunk_len); // copy chunk len chars into the chunk array
-        for (int j = chunk_len; j < 32; j++) {
-          chunk[j] = 'x'; // Fill remainder of chunc with x
-        }
-        chunk[32] = '\0'; // add a null terminator to the end of the chunk
-        simpleserial_put('r', 32, chunk);
   }
+
+  return 0;
+}
+
+static int reset(void)
+{
+  i = 0;
+
   return 0;
 }
 
@@ -60,8 +63,9 @@ int main(void)
 
   simpleserial_init();
 
-  simpleserial_addcmd('k', 128, test_keys);
-  simpleserial_addcmd('p', 128, get_pk);
+  simpleserial_addcmd('k', 0, test_keys);
+  simpleserial_addcmd('p', 0, get_pk);
+  simpleserial_addcmd('r', 0, reset);
 
   while(1)
 		simpleserial_get();
