@@ -33,30 +33,47 @@ static int test_keys(void)
 static int get_pk(void)
 {
   
-  int len = KYBER_PUBLICKEYBYTES;
+  int len = KYBER_PUBLICKEYBYTES; 
 
   if (i < len) {
         char chunk[33]; // 32 chars plus a null terminator       
-        memcpy(chunk, pk + i, 32); // copy chunk 96 into the chunk array        
+        memcpy(chunk, pk + i, 32); // copy next 32 chars into the chunk array        
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('p', 32, chunk);
         i += 32;
-
   }
+  return 0;
+}
 
+static int get_sk(void)
+{
+  int len = KYBER_SECRETKEYBYTES; //1632 bytes
+
+  if (i < len) {
+        char chunk[33]; // 32 chars plus a null terminator       
+        memcpy(chunk, pk + i, 32); // copy next 32 chars into the chunk array        
+        chunk[32] = '\0'; // add a null terminator to the end of the chunk
+        simpleserial_put('s', 32, chunk);
+        i += 32;
+  }
   return 0;
 }
 
 static int reset(void)
 {
   i = 0;
-
   return 0;
 }
 
-static int get_full_pk(void)
+static int get_255_pk(void)
 {
-	simpleserial_put('p', 255, pk);
+	simpleserial_put('p', 255, pk); //uint_t maks 255 byte :(
+	return 0;
+}
+
+static int get_255_sk(void)
+{
+	simpleserial_put('s', 255, sk); //uint_t maks 255 byte :(
 	return 0;
 }
 
@@ -70,9 +87,11 @@ int main(void)
   simpleserial_init();
 
   simpleserial_addcmd('k', 0, test_keys);
-  simpleserial_addcmd('p', 0, get_pk);
+  simpleserial_addcmd('p', 0, get_pk); 
+  simpleserial_addcmd('f', 0, get_255_pk);
+  simpleserial_addcmd('s', 0, get_sk); 
+  simpleserial_addcmd('g', 0, get_255_sk);
   simpleserial_addcmd('r', 0, reset);
-  simpleserial_addcmd('f', 0, get_full_pk);
   while(1)
 		simpleserial_get();
  
