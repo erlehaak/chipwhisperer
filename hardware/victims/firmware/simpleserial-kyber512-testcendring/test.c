@@ -6,11 +6,11 @@
 
 #include <string.h>
 
-unsigned uint8_t sk[KYBER_SECRETKEYBYTES];
-unsigned uint8_t pk[KYBER_PUBLICKEYBYTES];
-unsigned uint8_t ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
-unsigned uint8_t ct[KYBER_CIPHERTEXTBYTES];
-unsigned uint8_t m[KYBER_INDCPA_MSGBYTES];
+uint8_t sk[KYBER_SECRETKEYBYTES];
+uint8_t pk[KYBER_PUBLICKEYBYTES];
+uint8_t ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
+uint8_t ct[KYBER_CIPHERTEXTBYTES];
+uint8_t m[KYBER_INDCPA_MSGBYTES];
 
 int i = 0;
 
@@ -38,7 +38,8 @@ static int encrypt_indcpa(void)
 {
   uint8_t coins[KYBER_SYMBYTES];
   randombytes(coins, KYBER_SYMBYTES);
-  void PQCLEAN_KYBER512_CLEAN_indcpa_enc(ct, m, pk, coins);
+  simpleserial_put('$', KYBER_SYMBYTES, coins);
+  PQCLEAN_KYBER512_CLEAN_indcpa_enc(ct, m, pk, coins);
   return 0;
 }
 
