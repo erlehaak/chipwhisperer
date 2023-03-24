@@ -67,7 +67,7 @@ static int get_ct(void)
         char chunk[33]; // 32 chars plus a null terminator       
         memcpy(chunk, ct + i, 32); // copy next 32 chars into the chunk array        
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
-        simpleserial_put('s', 32, chunk);
+        simpleserial_put('c', 32, chunk);
         i += 32;
   }
   return 0;
@@ -78,7 +78,7 @@ static int get_ss_a(void){
 }
 
 static int get_ss_b(void){
-  simpleserial_put('a', KYBER_SSBYTES, ss_b);
+  simpleserial_put('b', KYBER_SSBYTES, ss_b);
 }
 
 static int get_255_pk(void)
