@@ -2,13 +2,15 @@
 #include "../hal/hal.h"
 #include "kem.h"
 #include "simpleserial.h"
+#include "indcpa.h"
 
 #include <string.h>
 
-unsigned char sk[KYBER_SECRETKEYBYTES];
-unsigned char pk[KYBER_PUBLICKEYBYTES];
-unsigned char ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
-unsigned char ct[KYBER_CIPHERTEXTBYTES];
+unsigned uint8_t sk[KYBER_SECRETKEYBYTES];
+unsigned uint8_t pk[KYBER_PUBLICKEYBYTES];
+unsigned uint8_t ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
+unsigned uint8_t ct[KYBER_CIPHERTEXTBYTES];
+unsigned uint8_t m[KYBER_INDCPA_MSGBYTES];
 
 int i = 0;
 
@@ -23,11 +25,21 @@ static int key_gen(void)
 static int encrypt(void)
 {
   PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct, ss_b, pk);
+  return 0;
 }
 
 static int decrypt(void)
 {
   PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss_a, ct, sk);
+  return 0;
+}
+
+static int encrypt_indcpa(void)
+{
+  uint8_t coins[KYBER_SYMBYTES];
+  randombytes(coins, KYBER_SYMBYTES);
+  void PQCLEAN_KYBER512_CLEAN_indcpa_enc(ct, m, pk, coins);
+  return 0;
 }
 
 static int get_pk(void)
@@ -110,6 +122,7 @@ int main(void)
   simpleserial_addcmd('k', 0, key_gen);
   simpleserial_addcmd('e', 0, encrypt);
   simpleserial_addcmd('d', 0, decrypt);
+  simpleserial_addcmd('i', 0, encrypt_indcpa);
   simpleserial_addcmd('p', 0, get_pk); 
   simpleserial_addcmd('s', 0, get_sk);
   simpleserial_addcmd('c', 0, get_ct);
