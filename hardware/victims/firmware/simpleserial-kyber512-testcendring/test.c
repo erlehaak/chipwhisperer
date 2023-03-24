@@ -112,7 +112,7 @@ int main(void)
   simpleserial_addcmd('d', 0, decrypt);
   simpleserial_addcmd('p', 0, get_pk); 
   simpleserial_addcmd('s', 0, get_sk);
-  simpleserial_addcmd('s', 0, get_ct);
+  simpleserial_addcmd('c', 0, get_ct);
   simpleserial_addcmd('a', 0, get_ss_a);
   simpleserial_addcmd('b', 0, get_ss_b);
   simpleserial_addcmd('f', 0, get_255_pk); 
