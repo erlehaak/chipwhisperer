@@ -22,7 +22,7 @@ FORMAT = binary
 
 CFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
 CPPFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
-ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
+ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections -mfpu=fpv4-sp-d16
 
 CDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
