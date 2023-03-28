@@ -16,9 +16,9 @@ int i = 0;
 
 static uint8_t key_gen(uint8_t* m, uint8_t len)
 {
-  simpleserial_put('p', 48, pk);
+  //simpleserial_put('p', 48, pk);
   PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
-  simpleserial_put('p', 48, pk);
+  //simpleserial_put('p', 48, pk);
   return 0;
 }
 
@@ -122,6 +122,7 @@ int main(void)
 	trigger_setup();
 
   simpleserial_init();
+  
   //reserverte simpleserial komandoer: 'v', 'y', 'w'
   simpleserial_addcmd('k', 0, key_gen);
   simpleserial_addcmd('e', 0, encrypt);
@@ -137,9 +138,10 @@ int main(void)
   simpleserial_addcmd('r', 0, reset);
 
 //For debugging:
-//  key_gen();
-//  encrypt();
-//  decrypt();  
+uint8_t b = 0;
+key_gen(&b,b);
+encrypt(&b,b);
+decrypt(&b,b);  
 
   while(1)
 		simpleserial_get();
