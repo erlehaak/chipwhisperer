@@ -14,7 +14,7 @@ uint8_t m[KYBER_INDCPA_MSGBYTES];
 
 int i = 0;
 
-static int key_gen(void)
+static uint8_t key_gen(uint8_t* m, uint8_t len)
 {
   simpleserial_put('p', 48, pk);
   PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
@@ -22,19 +22,19 @@ static int key_gen(void)
   return 0;
 }
 
-static int encrypt(void)
+static uint8_t encrypt(uint8_t* m, uint8_t len)
 {
   PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct, ss_b, pk);
   return 0;
 }
 
-static int decrypt(void)
+static uint8_t decrypt(uint8_t* m, uint8_t len)
 {
   PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss_a, ct, sk);
   return 0;
 }
 
-static int encrypt_indcpa(void)
+static uint8_t encrypt_indcpa(uint8_t* m, uint8_t len)
 {
   uint8_t coins[KYBER_SYMBYTES];
   randombytes(coins, KYBER_SYMBYTES);
@@ -43,13 +43,13 @@ static int encrypt_indcpa(void)
   return 0;
 }
 
-static int get_pk(void)
+static uint8_t get_pk(uint8_t* m, uint8_t inputLen)
 {
   
   int len = KYBER_PUBLICKEYBYTES; 
 
   if (i < len) {
-        char chunk[33]; // 32 chars plus a null terminator       
+        uint8_t chunk[33]; // 32 chars plus a null terminator       
         memcpy(chunk, pk + i, 32); // copy next 32 chars into the chunk array        
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('p', 32, chunk);
@@ -58,12 +58,12 @@ static int get_pk(void)
   return 0;
 }
 
-static int get_sk(void)
+static uint8_t get_sk(uint8_t* m, uint8_t inputLen)
 {
   int len = KYBER_SECRETKEYBYTES; //1632 bytes
 
   if (i < len) {
-        char chunk[33]; // 32 chars plus a null terminator       
+        uint8_t chunk[33]; // 32 chars plus a null terminator       
         memcpy(chunk, pk + i, 32); // copy next 32 chars into the chunk array        
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('s', 32, chunk);
@@ -72,12 +72,12 @@ static int get_sk(void)
   return 0;
 }
 
-static int get_ct(void)
+static uint8_t get_ct(uint8_t* m, uint8_t inputLen)
 {
   int len = KYBER_CIPHERTEXTBYTES; //768 bytes
 
   if (i < len) {
-        char chunk[33]; // 32 chars plus a null terminator       
+        uint8_t chunk[33]; // 32 chars plus a null terminator       
         memcpy(chunk, ct + i, 32); // copy next 32 chars into the chunk array        
         chunk[32] = '\0'; // add a null terminator to the end of the chunk
         simpleserial_put('c', 32, chunk);
@@ -86,27 +86,29 @@ static int get_ct(void)
   return 0;
 }
 
-static int get_ss_a(void){
+static uint8_t get_ss_a(uint8_t* m, uint8_t len){
   simpleserial_put('a', KYBER_SSBYTES, ss_a);
+  return 0;
 }
 
-static int get_ss_b(void){
+static uint8_t get_ss_b(uint8_t* m, uint8_t len){
   simpleserial_put('b', KYBER_SSBYTES, ss_b);
+  return 0;
 }
 
-static int get_255_pk(void)
+static uint8_t get_255_pk(uint8_t* m, uint8_t len)
 {
 	simpleserial_put('p', 255, pk); //uint8_t maks 255 byte :(
 	return 0;
 }
 
-static int get_255_sk(void)
+static uint8_t get_255_sk(uint8_t* m, uint8_t len)
 {
 	simpleserial_put('s', 255, sk); //uint8_t maks 255 byte :(
 	return 0;
 }
 
-static int reset(void)
+static uint8_t reset(uint8_t* m, uint8_t len)
 {
   i = 0;
   return 0;
@@ -114,6 +116,7 @@ static int reset(void)
 
 int main(void)
 {
+  
   platform_init();
 	init_uart();
 	trigger_setup();
@@ -132,6 +135,12 @@ int main(void)
   simpleserial_addcmd('f', 0, get_255_pk); 
   simpleserial_addcmd('g', 0, get_255_sk);
   simpleserial_addcmd('r', 0, reset);
+
+//For debugging:
+//  key_gen();
+//  encrypt();
+//  decrypt();  
+
   while(1)
 		simpleserial_get();
  
