@@ -1,4 +1,4 @@
-#include "matacc.i"
+#include "i-file/matacc.i"
 .extern kyber_shake128_squeezeblocks
 
 .syntax unified

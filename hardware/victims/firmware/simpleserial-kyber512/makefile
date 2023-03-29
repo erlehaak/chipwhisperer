@@ -43,18 +43,12 @@ SRC += randombytes.c
 SRC += fips202.c 
 SRC += poly.c
 SRC += polyvec.c
-SRC += keccakf1600.c
 SRC += symmetric-fips202.c
 SRC += cbd.c
 SRC += ntt.c
-SRC += crypto_hashblocks_sha512.c
 SRC += kem.c
-SRC += nistseedexpander.c
-SRC += sha2.c
-SRC += sp800-185.c
-SRC += test.c
 SRC += verify.c
-#SRC += matacc.c # Deletes matacc.i making matacc_asm.S not work
+SRC += matacc.c # Deletes matacc.i making matacc_asm.S not work
 
 #i files??
 #ASRC += macros.i #Syntax errors through file: macros.i:14:1: error: stray '#' in program \n 14 | #ifndef MACROS_I
@@ -77,7 +71,7 @@ ASRC += matacc_asm.S
 CRYPTO_TARGET = NONE
 
 ifeq ($(CRYPTO_OPTIONS),)
-CRYPTO_OPTIONS = AVRCRYPTOLIB
+CRYPTO_OPTIONS = NONE
 endif
 
 #Add simpleserial project to build
