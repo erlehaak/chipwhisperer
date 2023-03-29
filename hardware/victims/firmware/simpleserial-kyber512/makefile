@@ -36,15 +36,13 @@ TARGET = simpleserial-kyber512
 
 # List C source files here.
 # Header files (.h) are automatically pulled in.
-SRC += simpleserial-kyber512.c
+SRC += kyber512.c
 
 SRC += indcpa.c
 SRC += randombytes.c 
 SRC += fips202.c 
 SRC += poly.c
 SRC += polyvec.c
-SRC += matacc.c
-SRC += matacc.i
 SRC += keccakf1600.c
 SRC += symmetric-fips202.c
 SRC += cbd.c
@@ -56,12 +54,16 @@ SRC += sha2.c
 SRC += sp800-185.c
 SRC += test.c
 SRC += verify.c
+#SRC += matacc.c # Deletes matacc.i making matacc_asm.S not work
+
+#i files??
+#ASRC += macros.i #Syntax errors through file: macros.i:14:1: error: stray '#' in program \n 14 | #ifndef MACROS_I
+#ASRC += matacc.i #Syntax errors through file:  matacc.i:3:1: error: expected identifier or '(' before '.' token
+#SRC += macros.i #Deletes the file
+#SRC += matacc.i #Deletes the file
 
 #Asembly source files
-
-ASRC += macros.i
 ASRC += reduce.S
-ASRC += crypto_hashblocks_sha512_inner32.s
 ASRC += fastaddsub.S
 ASRC += fastbasemul.S
 ASRC += fastinvntt.S
@@ -72,9 +74,11 @@ ASRC += matacc_asm.S
 
 # -----------------------------------------------------------------------------
 
-#ifeq ($(CRYPTO_OPTIONS),)
-#CRYPTO_OPTIONS = AES128C
-#endif
+CRYPTO_TARGET = NONE
+
+ifeq ($(CRYPTO_OPTIONS),)
+CRYPTO_OPTIONS = AVRCRYPTOLIB
+endif
 
 #Add simpleserial project to build
 include ../simpleserial/Makefile.simpleserial
