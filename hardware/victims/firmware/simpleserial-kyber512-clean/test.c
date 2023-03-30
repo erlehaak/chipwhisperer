@@ -122,7 +122,7 @@ int main(void)
 	trigger_setup();
 
   simpleserial_init();
-  
+  /*
   //reserverte simpleserial komandoer: 'v', 'y', 'w'
   simpleserial_addcmd('k', 0, key_gen);
   simpleserial_addcmd('e', 0, encrypt);
@@ -136,13 +136,18 @@ int main(void)
   simpleserial_addcmd('f', 0, get_255_pk); 
   simpleserial_addcmd('g', 0, get_255_sk);
   simpleserial_addcmd('r', 0, reset);
-/*
-//For debugging:
-uint8_t b = 0;
-key_gen(&b,b);
-encrypt(&b,b);
-decrypt(&b,b);  
 */
+//For debugging:
+  putch('1');
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);
+  putch('2');
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct, ss_b, pk);
+  putch('3');
+  PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss_a, ct, sk);
+  putch('4');
+  simpleserial_put('a', KYBER_SSBYTES, ss_a);
+  simpleserial_put('b', KYBER_SSBYTES, ss_b);
+
   while(1)
 		simpleserial_get();
  
