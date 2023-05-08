@@ -31,11 +31,11 @@ doublebasemul_asm:
   movw  q, #3329
   movt qinv, #3327
 
-  ldrd poly0, poly2, [aptr], #8
-  ldrd poly1, poly3, [bptr], #8
+  ldrd poly0, poly2, [aptr], #8  // Loader med del ntt av ciphertext poly0 = c0c1c2c3, poly2 = c0'c1'c2'c3', 2*4 byte
+  ldrd poly1, poly3, [bptr], #8  // Loader med tmp fra polymult secret key poly1 = k0k1k2k3, poly3 = k0'k1'k2'k3', 2*4 byte. 
 
   //basemul(r->coeffs + 4 * i, a->coeffs + 4 * i, b->coeffs + 4 * i, zetas[64 + i]);
-  smultt tmp, poly0, poly1
+  smultt tmp, poly0, poly1   // Steg 1: Gjett verdier for k2,k3 (2^16 muligheter) finn hw av alle ciphertexts , Steg 2 finn Pearson correlation, lagre størst cor k2,k3 > x
   montgomery q, qinv, tmp, tmp2
   smultb tmp2, tmp2, zeta
   smlabb tmp2, poly0, poly1, tmp2
@@ -45,13 +45,13 @@ doublebasemul_asm:
   smuadx tmp2, poly0, poly1
   montgomery q, qinv, tmp2, tmp3
   // r[1] in upper half of tmp3
-  pkhtb tmp, tmp3, tmp, asr#16
+  pkhtb tmp, tmp3, tmp, asr#16  // Steg 4 For alle cor(k2,k3) > x, gjett k1, k2 finn hamming weight av alle ciphertext, lagre størst correalation k0,k1,k2,k3
   str tmp, [rptr], #4
 
   neg zeta, zeta
 
   //basemul(r->coeffs + 4 * i + 2, a->coeffs + 4 * i + 2, b->coeffs + 4 * i + 2, - zetas[64 + i]);
-  smultt tmp, poly2, poly3
+  smultt tmp, poly2, poly3 //Steg 1
   montgomery q, qinv, tmp, tmp2
   smultb tmp2, tmp2, zeta
   smlabb tmp2, poly2, poly3, tmp2
@@ -61,7 +61,7 @@ doublebasemul_asm:
   smuadx tmp2, poly2, poly3
   montgomery q, qinv, tmp2, tmp3
   // r[1] in upper half of tmp3
-  pkhtb tmp, tmp3, tmp, asr#16
+  pkhtb tmp, tmp3, tmp, asr#16 //Steg 4
   str tmp, [rptr], #4
 
   pop {r4-r11, pc}
