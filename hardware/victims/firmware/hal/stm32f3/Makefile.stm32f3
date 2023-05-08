@@ -8,7 +8,7 @@ endif
 
 ASRC += stm32f3_startup.S
 
-MCU_FLAGS = -mcpu=cortex-m4
+MCU_FLAGS = -mcpu=cortex-m4 
 
 CC = arm-none-eabi-gcc
 OBJCOPY = arm-none-eabi-objcopy
@@ -20,9 +20,9 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
-CPPFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections
-ASFLAGS += -mthumb -mfloat-abi=soft -fmessage-length=0 -ffunction-sections -mfpu=fpv4-sp-d16
+CFLAGS += -mthumb -mfloat-abi=hard -fmessage-length=0 -ffunction-sections
+CPPFLAGS += -mthumb -mfloat-abi=hard -fmessage-length=0 -ffunction-sections
+ASFLAGS += -mthumb -mfloat-abi=hard -fmessage-length=0 -ffunction-sections
 
 CDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F303xC -DSTM32F3 -DSTM32 -DDEBUG

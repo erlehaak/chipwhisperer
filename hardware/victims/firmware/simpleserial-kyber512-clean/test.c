@@ -11,7 +11,7 @@ uint8_t pk[KYBER_PUBLICKEYBYTES];
 uint8_t ss_a[KYBER_SSBYTES], ss_b[KYBER_SSBYTES];
 uint8_t ct[KYBER_CIPHERTEXTBYTES];
 uint8_t m[KYBER_INDCPA_MSGBYTES];
-
+/*
 int i = 0;
 
 static uint8_t key_gen(uint8_t* m, uint8_t len)
@@ -113,7 +113,7 @@ static uint8_t reset(uint8_t* m, uint8_t len)
   i = 0;
   return 0;
 }
-
+*/
 int main(void)
 {
   
@@ -136,6 +136,9 @@ int main(void)
   simpleserial_addcmd('f', 0, get_255_pk); 
   simpleserial_addcmd('g', 0, get_255_sk);
   simpleserial_addcmd('r', 0, reset);
+
+  while(1)
+		simpleserial_get();
 */
 //For debugging:
   putch('1');
@@ -147,9 +150,6 @@ int main(void)
   putch('4');
   simpleserial_put('a', KYBER_SSBYTES, ss_a);
   simpleserial_put('b', KYBER_SSBYTES, ss_b);
-
-  while(1)
-		simpleserial_get();
  
   return 0;
 }
