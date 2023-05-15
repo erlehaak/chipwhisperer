@@ -2,6 +2,7 @@
 #include "params.h"
 #include "reduce.h"
 #include <stdint.h>
+#include <stdio.h>
 
 /* Code to generate PQCLEAN_KYBER512_CLEAN_zetas and zetas_inv used in the number-theoretic transform:
 
@@ -65,8 +66,10 @@ const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
 *
 * Returns 16-bit integer congruent to a*b*R^{-1} mod q
 **************************************************/
-static int16_t fqmul(int16_t a, int16_t b) {
-    return PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)a * b);
+static int16_t fqmul(int16_t a, int16_t b) { 
+    int16_t returns = PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)a * b);
+    printf("%d" ",  " "%d" ",  " "%d" "\n", a, b, returns);
+    return returns;
 }
 
 /*************************************************
