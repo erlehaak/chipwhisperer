@@ -8,6 +8,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <stdio.h>
+void printintarray(int16_t *array, size_t size){
+    
+    for(int i=0; i<size; i++) {
+        printf("%hhu ", array[i]);
+    }
+    printf("\n\n");
+}
+
 /*************************************************
 * Name:        pack_pk
 *
@@ -101,6 +110,7 @@ static void pack_ciphertext(uint8_t r[KYBER_INDCPA_BYTES], polyvec *b, poly *v) 
 **************************************************/
 static void unpack_ciphertext(polyvec *b, poly *v, const uint8_t c[KYBER_INDCPA_BYTES]) {
     PQCLEAN_KYBER512_CLEAN_polyvec_decompress(b, c);
+    //printintarray(b->vec[0].coeffs, KYBER_N);
     PQCLEAN_KYBER512_CLEAN_poly_decompress(v, c + KYBER_POLYVECCOMPRESSEDBYTES);
 }
 
@@ -319,8 +329,23 @@ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
     unpack_ciphertext(&b, &v, c);
     unpack_sk(&skpv, sk);
 
+    printf("Decompressed polinomial: \n");
+    printintarray(v.coeffs, KYBER_N);
+    printf("Decompressed poly vectiors and input to ntt: \n");
+    printintarray(b.vec[0].coeffs, KYBER_N);
+    printintarray(b.vec[1].coeffs, KYBER_N);
+
     PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&b);
+
+    printf("ntt poly vec output: \n");
+    printintarray(b.vec[0].coeffs, KYBER_N);
+    printintarray(b.vec[1].coeffs, KYBER_N);
+
+    //printintarray(b.vec[0].coeffs, KYBER_N);
+
     PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(&mp, &skpv, &b);
+
+    
     PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(&mp);
 
     PQCLEAN_KYBER512_CLEAN_poly_sub(&mp, &v, &mp);
@@ -328,3 +353,4 @@ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES],
 
     PQCLEAN_KYBER512_CLEAN_poly_tomsg(m, &mp);
 }
+
