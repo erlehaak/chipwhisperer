@@ -7,6 +7,7 @@
 
 #include <stdint.h>
 
+#include "../hal/hal.h"
 
 /*************************************************
 * Name:        poly_compress
@@ -368,15 +369,16 @@ extern void doublebasemul_asm(int16_t *r, const int16_t *a, const int16_t *b, in
 void poly_frombytes_mul(poly *r, const unsigned char *a) {
     int16_t tmp[4];
     int i;
-
+    trigger_high();
     for (i = 0; i < KYBER_N / 4; i++) {
         tmp[0] = a[6 * i]          | ((uint16_t)a[6 * i + 1] & 0x0f) << 8;
         tmp[1] = a[6 * i + 1] >> 4 | ((uint16_t)a[6 * i + 2] & 0xff) << 4;
         tmp[2] = a[6 * i + 3]      | ((uint16_t)a[6 * i + 4] & 0x0f) << 8;
         tmp[3] = a[6 * i + 4] >> 4 | ((uint16_t)a[6 * i + 5] & 0xff) << 4;
-
+  
         doublebasemul_asm(&r->coeffs[4*i], &r->coeffs[4*i], tmp, zetas[i]);
     }
+    trigger_low();
 }
 
 /*************************************************

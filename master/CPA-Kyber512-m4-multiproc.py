@@ -1,6 +1,7 @@
 import numpy as np
 from tqdm import tnrange
 import json
+from multiprocessing import Pool, cpu_count, Value, Lock
 
 KYBER_N = 256
 KYBER_Q = 3329
@@ -93,39 +94,54 @@ def std_dev(X, X_bar):
 def cov(X, X_bar, Y, Y_bar):
     return np.sum((X-X_bar)*(Y-Y_bar), axis=0)
 
+counter = None
 
-data = np.load('dataTest.npy', allow_pickle=True)
+def init(args):
+    global counter
+    counter = args
 
-maxcpa = [0] * 65536
+def calculate_max_cpa(kguess_range):
+    data = np.load('dataNewTrigger.npy', allow_pickle=True)
+    trace_array = [x[2] for x in data]
+    # we don't need to redo the mean and std dev calculations 
+    # for each key guess
+    t_bar = mean(trace_array) 
+    o_t = std_dev(trace_array, t_bar)
+    
+    maxcpalocal = []
+    for i, kguess in enumerate(kguess_range):
+        hws = np.array([[getHammingSteg1(ctPoly(d[1], 0), kguess, 0) for d in data]]).transpose()
+        hws_bar = mean(hws)
+        o_hws = std_dev(hws, hws_bar)
+        correlation = cov(trace_array, t_bar, hws, hws_bar)
+        cpaoutput = correlation/(o_t*o_hws)
+        maxcpalocal.append(max(abs(cpaoutput)))
+        
+        #Printing progress
+        with counter.get_lock():
+            counter.value += 1
+            if counter.value % 100 == 0:  # update every 100 iterations
+                print(f"Progress: {counter.value}/{2**16}", end='\r')
 
-trace_array = [x[2] for x in data]
-# we don't need to redo the mean and std dev calculations 
-# for each key guess
-t_bar = mean(trace_array) 
-o_t = std_dev(trace_array, t_bar)
 
+    return maxcpalocal
 
-for kguess in range(0, 65536):
-    hws = np.array([[getHammingSteg1(ctPoly(d[1], 0), kguess, 0) for d in data]]).transpose()
-    #print(ctPoly(d[1], 0))
-    #print(getHammingSteg1(ctPoly(d[1], 0), kguess, 0))
-    #print(hws)
-    hws_bar = mean(hws)
-    o_hws = std_dev(hws, hws_bar)
-    correlation = cov(trace_array, t_bar, hws, hws_bar)
-    cpaoutput = correlation/(o_t*o_hws)
-    maxcpa[kguess] = max(abs(cpaoutput))
-    print(kguess, end='\r')
+if __name__ == "__main__":
+    counter = Value('i', 0)
+
+    with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
+        ranges = [range(i, i + 2**16 // cpu_count()) for i in range(0, 2**16, 2**16 // cpu_count())]
+        results = pool.map(calculate_max_cpa, ranges)
+
+    maxcpa = [result for sublist in results for result in sublist]  
     
 
-guess = np.argmax(maxcpa)
-guess_corr = max(maxcpa)
-# ###################
-# END SOLUTION
-# ###################
-print("Key guess: ", hex(guess))
-print("Correlation: ", guess_corr)
-print("Fasit", hex(0x77e), "corr:", maxcpa[0x77e])
+    guess = np.argmax(maxcpa)
+    guess_corr = max(maxcpa)
 
-with open("maxcpadatatest", "w") as fp:
-    json.dump(maxcpa, fp)
+    print("Key guess: ", hex(guess))
+    print("Correlation: ", guess_corr)
+    print("Fasit", hex(0x77e), "corr:", maxcpa[0x77e])
+
+    with open("maxcpa-Multi", "w") as fp:
+        json.dump(maxcpa, fp)

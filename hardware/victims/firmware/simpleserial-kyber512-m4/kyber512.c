@@ -50,9 +50,9 @@ static uint8_t encrypt(uint8_t* m, uint8_t len)
 
 static uint8_t decrypt(uint8_t* m, uint8_t len)
 { 
-  trigger_high();
+  //trigger_high();
   indcpa_dec(m_output, ct, static_sk);
-  trigger_low(); 
+  //trigger_low(); 
   return 0;
 }
 
