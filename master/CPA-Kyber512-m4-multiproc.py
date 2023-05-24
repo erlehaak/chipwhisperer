@@ -82,8 +82,34 @@ def always_positive(r):
     for i in range(len(r)):
         r[i] = (r[i] % KYBER_Q + KYBER_Q) % KYBER_Q
 
+def smultt_poly(a,b):
+    negative = False
+    
+    if is_negative_twos_complement(a, 16):
+        negative = not negative
+        a = invert_twos_complement(a, 16)
+    
+    if is_negative_twos_complement(b, 16):
+        negative = not negative
+        b = invert_twos_complement(b, 16)
+    
+    prod = a * b
+    
+    if negative:
+        return invert_twos_complement(prod, 32)
+    return prod
+
+def is_negative_twos_complement(num, bits):
+    msb = (num >> (bits - 1)) & 1
+    return msb == 1
+
+def invert_twos_complement(num, bits):
+    inverted_num = (~num) & ((1 << bits) - 1)
+    inverted_num += 1
+    return inverted_num
+
 def getHammingSteg1(poly, keyguess, iteration):
-    return hw(poly[1+4*iteration]*keyguess)
+    return hw(smultt_poly(poly[1+4*iteration], keyguess))
 
 def mean(X):
     return np.sum(X, axis=0)/len(X)
@@ -120,8 +146,7 @@ def calculate_max_cpa(kguess_range):
         #Printing progress
         with counter.get_lock():
             counter.value += 1
-            if counter.value % 100 == 0:  # update every 100 iterations
-                print(f"Progress: {counter.value}/{2**16}", end='\r')
+            print(f"Progress: {counter.value}/{2**16}", end='\r')
 
 
     return maxcpalocal
@@ -143,5 +168,5 @@ if __name__ == "__main__":
     print("Correlation: ", guess_corr)
     print("Fasit", hex(0x77e), "corr:", maxcpa[0x77e])
 
-    with open("maxcpa-Multi", "w") as fp:
+    with open("maxcpa-steg1", "w") as fp:
         json.dump(maxcpa, fp)
