@@ -233,67 +233,89 @@ def std_dev(X, X_bar):
 def cov(X, X_bar, Y, Y_bar):
     return np.sum((X-X_bar)*(Y-Y_bar), axis=0)
 
+
+####### Multiprocessing functions ############
+
+####### Main ########
+
 if __name__ == "__main__":
 
-    data = np.load('dataNewTrigger.npy', allow_pickle=True)
-    data_del_1 = data[0:1000]                               #Siden første nøkkel, skal være [index:index+1000 fra forige nøkkel]
-    trace_array = [x[2] for x in data_del_1]
+    data = np.load('dataNewTrigger.npy', allow_pickle=True)                              #Siden første nøkkel, skal være [index:index+1000 fra forige nøkkel]
+    trace_array = [x[2] for x in data]
    
     t_bar = mean(trace_array) 
     o_t = std_dev(trace_array, t_bar)
 
+    
     #Del 1
     maxcpa_del1 = []
     maxcpa_del1_index = []
 
     for kguess in range(KYBER_Q):
-        hws = np.array([[getHammingSteg1(ctPoly(d[1], 0), kguess, 0) for d in data_del_1]]).transpose()
+        hws = np.array([[getHammingSteg1(ctPoly(d[1], 0), kguess, 0) for d in data]]).transpose()
         hws_bar = mean(hws)
         o_hws = std_dev(hws, hws_bar)
         covariance = cov(trace_array, t_bar, hws, hws_bar)
         correlation = covariance/(o_t*o_hws)
         maxcpa_del1.append(max(abs(correlation)))
-        maxcpa_del1_index.append(correlation.argmax())
+        maxcpa_del1_index.append(int(correlation.argmax()))
         
-        
+        #print( hex(kguess), correlation.argmax() ,int(correlation.argmax()))
+
         print(f"Progress Del 1: {kguess}/{KYBER_Q}", end='\r')
 
+
+    with open("maxcpa-total-steg1", "w") as fp:
+        json.dump(maxcpa_del1, fp)
+    with open("maxcpa-total-steg1-index", "w") as fp:
+        json.dump(maxcpa_del1_index, fp)
+    """
+    with open("maxcpa-total-steg1", "r") as fp:
+        maxcpa_del1 = json.load(fp)
+    with open("maxcpa-total-steg1-index", "r") as fp:
+        maxcpa_del1_index = json.load(fp)
+    
+    """
+    
     #Del 2
-    for index in np.argsort(maxcpa_del1):
-            data_del_2 = data[maxcpa_del1_index[index]:maxcpa_del1_index[index]+150] # Vil gå out of range mot de siste nøkklene
-            trace_array = [x[2] for x in data_del_2]
+    for index in np.argsort(maxcpa_del1)[-33::-1]:
+        
+            #data_del_2 = [x[maxcpa_del1_index[index]:maxcpa_del1_index[index]+150] for x in data] # Vil gå out of range mot de siste nøkklene
+            #trace_array = [x[2][maxcpa_del1_index[index]:maxcpa_del1_index[index]+150] for x in data]
    
             t_bar = mean(trace_array) 
             o_t = std_dev(trace_array, t_bar)
 
             maxcpa_del2 = []
             maxcpa_del2_index = []
-
+            
             for kguess in range(KYBER_Q):
                 hws = np.array([[getHammingSteg2(ctPoly(d[1], 0), index, kguess, 0) for d in data]]).transpose()
                 hws_bar = mean(hws)
                 o_hws = std_dev(hws, hws_bar)
                 covariance = cov(trace_array, t_bar, hws, hws_bar)
                 correlation = covariance/(o_t*o_hws)
-                maxcpa_del2.append(max(abs(correlation)))
-                maxcpa_del2_index.append(correlation.argmax())
+                maxcpa_del2.append(max(abs(correlation))) #feil
+                maxcpa_del2_index.append(int(correlation.argmax()))
 
-                print(f"Progress del 2 for {hex(index)}:{kguess}/{KYBER_Q}", end='\r')
+                print(f"Progress del 2 for {hex(index)}: {kguess}/{KYBER_Q}", end='\r')
 
             if (max(maxcpa_del2) > 0.9):
-                guess = [np.argmax(maxcpa_del2), index]
-                guess_index = maxcpa_del2_index[guess]
+                guess = [int(np.argmax(maxcpa_del2)), int(index)]
+                guess_index = maxcpa_del2_index[guess[0]]
 
-                with open("maxcpa-steg2", "w") as fp:
+                with open("keyguess-i0", "w") as fp:
                     json.dump([guess, guess_index], fp)
+                with open("maxcpa-i0", "w") as fp:
+                    json.dump([maxcpa_del1, maxcpa_del2], fp)  
 
                 print("Key guess:", guess)
                 print("Index:", guess_index)
-                print("Correalation:", max(maxcpa_del2))
+                print("Correalation:", maxcpa_del2[guess[0]])
 
                 break
             
-            print("maxcpa del2 for", index, "=", max(maxcpa_del2))
+            print("maxcpa del2 for", hex(np.argmax(maxcpa_del2)), hex(index), "=", maxcpa_del2[np.argmax(maxcpa_del2)])
 
                 
         
