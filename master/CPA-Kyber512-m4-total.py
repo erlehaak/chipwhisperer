@@ -1,7 +1,7 @@
 import numpy as np
-from tqdm import tnrange
 import json
-from multiprocessing import Pool, cpu_count, Value, Lock
+from multiprocessing import Pool, cpu_count, Value, Lock, shared_memory
+import time
 
 KYBER_N = 256
 KYBER_Q = 3329
@@ -71,7 +71,7 @@ def barrett_reduce(a):
     return a - t
 
 def ctPoly(ct, iteration):
-    poly=poly_unpackdecompress(ct, 0)
+    poly=poly_unpackdecompress(ct, iteration)
     ntt(poly)
     poly_reduce(poly)
     always_positive(poly)
@@ -203,20 +203,35 @@ def hw(n):
     return bin(n).count("1")
 
 def getHammingSteg1(poly, keyguess, iteration):
-    return hw(smultt(poly[1+4*iteration], keyguess, True))
+    # top double base multiplication
+    if ((iteration % 2) == 0):
+        return hw(smultt(poly[1+4 * (iteration//2)], keyguess, True))
+    
+    # bottom double base multiplication
+    return hw(smultt(poly[3+4 * (iteration//2)], keyguess, True))
 
 def getHammingSteg2(poly, steg1key, keyguess, iteration):
     
-    zeta = zetas_basemul[iteration]
+    # top double base multiplication
+    if ((iteration % 2) == 0):
+        zeta = zetas_basemul[iteration // 2]
+        ct_top = poly[1+4 * (iteration // 2)]
+        ct_bottom = poly[4 * (iteration // 2)]
+
+    # bottom double base multiplication
+    else:
+        zeta = invert_twos_complement(zetas_basemul[iteration // 2], 32)
+        ct_top = poly[3+4* (iteration // 2)]
+        ct_bottom = poly[2+4 * (iteration // 2)]
     
-    tmp = smultt(poly[1+4*iteration], steg1key, True)
+    tmp = smultt(ct_top, steg1key, True)
     tmp2 = smulbt(tmp, qReg, False)
     tmp2 = smlabb(qReg, tmp2, tmp, False)
     tmp2 = smultb(tmp2, zeta, False) 
-    tmp2 = smlabb(poly[4*iteration], keyguess, tmp2, True)
+    tmp2 = smlabb(ct_bottom, keyguess, tmp2, True)
     tmp = smulbt(tmp2, qReg, False)
     tmp = smlabb(qReg, tmp, tmp2, False)
-    tmp2 = smuadx(poly[1+4*iteration], poly[4*iteration], steg1key, keyguess)
+    tmp2 = smuadx(ct_top, ct_bottom, steg1key, keyguess)
     tmp3 = smulbt(tmp2,qReg, False)
     tmp3 = smlabb(qReg, tmp3, tmp2, False)
     return hw(pkhtb(tmp3, tmp))
@@ -235,87 +250,119 @@ def cov(X, X_bar, Y, Y_bar):
 
 
 ####### Multiprocessing functions ############
+counter = None
+
+def init(args):
+    global counter
+    counter = args
+
+
+def calculate_max_cpa_part_1(kguess_range, trace_arrays, cipher_texts, t_bar, o_t, k, byteNr):
+
+    maxcpa_del1_local = []
+    maxcpa_del1_index_local = []
+
+    for kguess in kguess_range:
+        hws = np.array([[getHammingSteg1(ctPoly(ct, k), kguess, byteNr) for ct in cipher_texts]]).transpose()
+        hws_bar = mean(hws)
+        o_hws = std_dev(hws, hws_bar)
+        covariance = cov(trace_arrays, t_bar, hws, hws_bar)
+        correlation = covariance/(o_t*o_hws)
+        maxcpa_del1_local.append(max(abs(correlation)))
+        maxcpa_del1_index_local.append(int(correlation.argmax()))
+
+        with counter.get_lock():
+            counter.value += 1
+            print(f"Progress del 1: {counter.value}/{KYBER_Q}", end='\r')
+
+    return maxcpa_del1_local, maxcpa_del1_index_local
+
+def calculate_max_cpa_part_2(kguess_range, trace_arrays, cipher_texts, t_bar, o_t, steg1key, k, byteNr):
+
+    maxcpa_del1_local = []
+    maxcpa_del1_index_local = []
+
+    for kguess in kguess_range:
+        hws = np.array([[getHammingSteg2(ctPoly(ct, k), steg1key, kguess, byteNr) for ct in cipher_texts]]).transpose()
+        hws_bar = mean(hws)
+        o_hws = std_dev(hws, hws_bar)
+        covariance = cov(trace_arrays, t_bar, hws, hws_bar)
+        correlation = covariance/(o_t*o_hws)
+        maxcpa_del1_local.append(max(abs(correlation)))
+        maxcpa_del1_index_local.append(int(correlation.argmax()))
+
+        with counter.get_lock():
+            counter.value += 1
+            print(f"Progress del 2 for {hex(steg1key)}: {counter.value}/{KYBER_Q}", end='\r')
+
+    return maxcpa_del1_local, maxcpa_del1_index_local
 
 ####### Main ########
 
 if __name__ == "__main__":
 
-    data = np.load('dataNewTrigger.npy', allow_pickle=True)                              #Siden første nøkkel, skal være [index:index+1000 fra forige nøkkel]
-    trace_array = [x[2] for x in data]
-   
-    t_bar = mean(trace_array) 
-    o_t = std_dev(trace_array, t_bar)
+    k = 0 #Kyber512 0 eller 1
+    byteNr = 0 #range(0, Kyber_N / 2 = 128)
 
+    data = np.load('dataNewTrigger.npy', allow_pickle=True)                              #Siden første nøkkel, skal være [index:index+1000 fra forige nøkkel]
+    trace_arrays = [x[2] for x in data]
+    cipher_texts = [x[1] for x in data]
+   
+    t_bar = mean(trace_arrays) 
+    o_t = std_dev(trace_arrays, t_bar)
+
+    start_time = time.time()
     
     #Del 1
-    maxcpa_del1 = []
-    maxcpa_del1_index = []
+    counter = Value('i', 0)
 
-    for kguess in range(KYBER_Q):
-        hws = np.array([[getHammingSteg1(ctPoly(d[1], 0), kguess, 0) for d in data]]).transpose()
-        hws_bar = mean(hws)
-        o_hws = std_dev(hws, hws_bar)
-        covariance = cov(trace_array, t_bar, hws, hws_bar)
-        correlation = covariance/(o_t*o_hws)
-        maxcpa_del1.append(max(abs(correlation)))
-        maxcpa_del1_index.append(int(correlation.argmax()))
-        
-        #print( hex(kguess), correlation.argmax() ,int(correlation.argmax()))
+    with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
+        args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
+        results = pool.starmap(calculate_max_cpa_part_1, args)
 
-        print(f"Progress Del 1: {kguess}/{KYBER_Q}", end='\r')
+    maxcpa_del1 = [cpa for result in results for cpa in result[0]]
+    maxcpa_del1_index = [index for result in results for index in result[1]]
 
-
-    with open("maxcpa-total-steg1", "w") as fp:
-        json.dump(maxcpa_del1, fp)
-    with open("maxcpa-total-steg1-index", "w") as fp:
-        json.dump(maxcpa_del1_index, fp)
-    """
-    with open("maxcpa-total-steg1", "r") as fp:
-        maxcpa_del1 = json.load(fp)
-    with open("maxcpa-total-steg1-index", "r") as fp:
-        maxcpa_del1_index = json.load(fp)
-    
-    """
-    
-    #Del 2
-    for index in np.argsort(maxcpa_del1)[-33::-1]:
-        
-            #data_del_2 = [x[maxcpa_del1_index[index]:maxcpa_del1_index[index]+150] for x in data] # Vil gå out of range mot de siste nøkklene
-            #trace_array = [x[2][maxcpa_del1_index[index]:maxcpa_del1_index[index]+150] for x in data]
+    with open(f"results/maxcpa-k{k}-i{byteNr}-1", "w") as fp:
+                json.dump(maxcpa_del1, fp)
    
-            t_bar = mean(trace_array) 
-            o_t = std_dev(trace_array, t_bar)
 
-            maxcpa_del2 = []
-            maxcpa_del2_index = []
-            
-            for kguess in range(KYBER_Q):
-                hws = np.array([[getHammingSteg2(ctPoly(d[1], 0), index, kguess, 0) for d in data]]).transpose()
-                hws_bar = mean(hws)
-                o_hws = std_dev(hws, hws_bar)
-                covariance = cov(trace_array, t_bar, hws, hws_bar)
-                correlation = covariance/(o_t*o_hws)
-                maxcpa_del2.append(max(abs(correlation))) #feil
-                maxcpa_del2_index.append(int(correlation.argmax()))
+    #Del 2
 
-                print(f"Progress del 2 for {hex(index)}: {kguess}/{KYBER_Q}", end='\r')
+    maxcpa_wrong_guess = []
+    for index in np.argsort(maxcpa_del1)[::-1]:
+        counter = Value('i', 0)
 
-            if (max(maxcpa_del2) > 0.9):
-                guess = [int(np.argmax(maxcpa_del2)), int(index)]
-                guess_index = maxcpa_del2_index[guess[0]]
+        with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
+            args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, index, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
+            results = pool.starmap(calculate_max_cpa_part_2, args)
 
-                with open("keyguess-i0", "w") as fp:
-                    json.dump([guess, guess_index], fp)
-                with open("maxcpa-i0", "w") as fp:
-                    json.dump([maxcpa_del1, maxcpa_del2], fp)  
+        maxcpa_del2 = [cpa for result in results for cpa in result[0]]
+        maxcpa_del2_index = [index for result in results for index in result[1]]
 
-                print("Key guess:", guess)
-                print("Index:", guess_index)
-                print("Correalation:", maxcpa_del2[guess[0]])
+        if (max(maxcpa_del2) > 0.9):
+            guess = [int(np.argmax(maxcpa_del2)), int(index)]
+            guess_index = [maxcpa_del2_index[guess[0]], maxcpa_del1_index[index]] 
+            elapsed_time = time.time() - start_time
 
-                break
-            
-            print("maxcpa del2 for", hex(np.argmax(maxcpa_del2)), hex(index), "=", maxcpa_del2[np.argmax(maxcpa_del2)])
+            with open(f"results/keyguess-k{k}-i{byteNr}", "w") as fp:
+                json.dump([guess, guess_index], fp)
+            with open(f"results/maxcpa-k{k}-i{byteNr}-2", "w") as fp:
+                json.dump(maxcpa_del2, fp)
+            with open(f"results/time-k{k}-i{byteNr}", "w") as fp:
+                json.dump(elapsed_time, fp)
+            with open(f"results/maxcpa-wrong-guess-k{k}-i{byteNr}", "w") as fp:
+                json.dump(maxcpa_wrong_guess, fp)
+
+            print("Key guess:", [hex(x) for x in guess])
+            print("Index:", guess_index)
+            print("Correalation:", maxcpa_del2[guess[0]])
+            print("time used:", elapsed_time)
+
+            break
+        
+        maxcpa_wrong_guess.append((int(np.argmax(maxcpa_del2)), int(index), maxcpa_del2[np.argmax(maxcpa_del2)]))
+        print("maxcpa del2 for", hex(np.argmax(maxcpa_del2)), hex(index), "=", maxcpa_del2[np.argmax(maxcpa_del2)])
 
                 
         
