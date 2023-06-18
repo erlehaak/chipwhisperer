@@ -3,6 +3,9 @@ import json
 from multiprocessing import Pool, cpu_count, Value, Lock, shared_memory
 import time
 
+import warnings
+warnings.filterwarnings("ignore")
+
 KYBER_N = 256
 KYBER_Q = 3329
 QINV = -3327
@@ -270,11 +273,11 @@ def calculate_max_cpa_part_1(kguess_range, trace_arrays, cipher_texts, t_bar, o_
         correlation = covariance/(o_t*o_hws)
         maxcpa_del1_local.append(max(abs(correlation)))
         maxcpa_del1_index_local.append(int(correlation.argmax()))
-
+        """
         with counter.get_lock():
             counter.value += 1
             print(f"Progress del 1: {counter.value}/{KYBER_Q}", end='\r')
-
+        """
     return maxcpa_del1_local, maxcpa_del1_index_local
 
 def calculate_max_cpa_part_2(kguess_range, trace_arrays, cipher_texts, t_bar, o_t, steg1key, k, byteNr):
@@ -290,79 +293,79 @@ def calculate_max_cpa_part_2(kguess_range, trace_arrays, cipher_texts, t_bar, o_
         correlation = covariance/(o_t*o_hws)
         maxcpa_del1_local.append(max(abs(correlation)))
         maxcpa_del1_index_local.append(int(correlation.argmax()))
-
+        """
         with counter.get_lock():
             counter.value += 1
             print(f"Progress del 2 for {hex(steg1key)}: {counter.value}/{KYBER_Q}", end='\r')
-
+        """
     return maxcpa_del1_local, maxcpa_del1_index_local
 
 ####### Main ########
 
 if __name__ == "__main__":
-
-    k = 0 #Kyber512 0 eller 1
-    byteNr = 0 #range(0, Kyber_N / 2 = 128)
-
-    data = np.load('dataNewTrigger.npy', allow_pickle=True)                              #Siden første nøkkel, skal være [index:index+1000 fra forige nøkkel]
-    trace_arrays = [x[2] for x in data]
-    cipher_texts = [x[1] for x in data]
-   
-    t_bar = mean(trace_arrays) 
-    o_t = std_dev(trace_arrays, t_bar)
-
-    start_time = time.time()
+  
+    for k in range(2):
+         
+        data = np.load(f'traces/kyber512-k{k}-24400.npy', allow_pickle=True)  # Limit amount of traces with [0:50], [0:200] etc.                          
+        trace_arrays = [x[2] for x in data]
+        cipher_texts = [x[1] for x in data]
     
-    #Del 1
-    counter = Value('i', 0)
+        t_bar = mean(trace_arrays) 
+        o_t = std_dev(trace_arrays, t_bar)
 
-    with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
-        args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
-        results = pool.starmap(calculate_max_cpa_part_1, args)
+        for byteNr in range(0, KYBER_N // 2):
+            print(f"k = {k}, byteNr = {byteNr}")
+            start_time = time.time()
+            
+            #Del 1
+            #counter = Value('i', 0)
+            print(f"Del 1", end='\r' )
+            with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
+                args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
+                results = pool.starmap(calculate_max_cpa_part_1, args)
 
-    maxcpa_del1 = [cpa for result in results for cpa in result[0]]
-    maxcpa_del1_index = [index for result in results for index in result[1]]
+            maxcpa_del1 = [cpa for result in results for cpa in result[0]]
+            maxcpa_del1_index = [index for result in results for index in result[1]]
 
-    with open(f"results/maxcpa-k{k}-i{byteNr}-1", "w") as fp:
-                json.dump(maxcpa_del1, fp)
-   
+            with open(f"results/maxcpa1000-k{k}-i{byteNr}-1", "w") as fp:
+                        json.dump(maxcpa_del1, fp)
 
-    #Del 2
 
-    maxcpa_wrong_guess = []
-    for index in np.argsort(maxcpa_del1)[::-1]:
-        counter = Value('i', 0)
+            #Del 2
+            maxcpa_wrong_guess = []
+            for index in np.argsort(maxcpa_del1)[::-1]:
+                #counter = Value('i', 0)
+                print(f"Del 2 for {hex(index)}", end='\r')
+                with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
+                    args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, index, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
+                    results = pool.starmap(calculate_max_cpa_part_2, args)
 
-        with Pool(initializer=init, initargs=(counter, ), processes=cpu_count()) as pool:
-            args = [(range(i, min(i + KYBER_Q // cpu_count(), KYBER_Q)), trace_arrays, cipher_texts, t_bar, o_t, index, k, byteNr) for i in range(0, KYBER_Q, KYBER_Q // cpu_count())]
-            results = pool.starmap(calculate_max_cpa_part_2, args)
+                maxcpa_del2 = [cpa for result in results for cpa in result[0]]
+                maxcpa_del2_index = [index for result in results for index in result[1]]
 
-        maxcpa_del2 = [cpa for result in results for cpa in result[0]]
-        maxcpa_del2_index = [index for result in results for index in result[1]]
+                if (max(maxcpa_del2) > 0.90):
+                    guess = [int(np.argmax(maxcpa_del2)), int(index)]
+                    guess_index = [maxcpa_del2_index[guess[0]], maxcpa_del1_index[index]] 
+                    elapsed_time = time.time() - start_time
 
-        if (max(maxcpa_del2) > 0.9):
-            guess = [int(np.argmax(maxcpa_del2)), int(index)]
-            guess_index = [maxcpa_del2_index[guess[0]], maxcpa_del1_index[index]] 
-            elapsed_time = time.time() - start_time
+                    with open(f"results/keyguess1000-k{k}-i{byteNr}", "w") as fp:
+                        json.dump([guess, guess_index], fp)
+                    with open(f"results/maxcpa1000-k{k}-i{byteNr}-2", "w") as fp:
+                        json.dump(maxcpa_del2, fp)
+                    with open(f"results/time1000-k{k}-i{byteNr}", "w") as fp:
+                        json.dump(elapsed_time, fp)
+                    with open(f"results/maxcpa-wrong-guess1000-k{k}-i{byteNr}", "w") as fp:
+                        json.dump(maxcpa_wrong_guess, fp)
 
-            with open(f"results/keyguess-k{k}-i{byteNr}", "w") as fp:
-                json.dump([guess, guess_index], fp)
-            with open(f"results/maxcpa-k{k}-i{byteNr}-2", "w") as fp:
-                json.dump(maxcpa_del2, fp)
-            with open(f"results/time-k{k}-i{byteNr}", "w") as fp:
-                json.dump(elapsed_time, fp)
-            with open(f"results/maxcpa-wrong-guess-k{k}-i{byteNr}", "w") as fp:
-                json.dump(maxcpa_wrong_guess, fp)
+                    print("Key guess:", [hex(x) for x in guess])
+                    print("Index:", guess_index)
+                    print("Correalation:", maxcpa_del2[guess[0]])
+                    print("time used:", elapsed_time)
 
-            print("Key guess:", [hex(x) for x in guess])
-            print("Index:", guess_index)
-            print("Correalation:", maxcpa_del2[guess[0]])
-            print("time used:", elapsed_time)
-
-            break
-        
-        maxcpa_wrong_guess.append((int(np.argmax(maxcpa_del2)), int(index), maxcpa_del2[np.argmax(maxcpa_del2)]))
-        print("maxcpa del2 for", hex(np.argmax(maxcpa_del2)), hex(index), "=", maxcpa_del2[np.argmax(maxcpa_del2)])
+                    break
+                
+                maxcpa_wrong_guess.append((int(np.argmax(maxcpa_del2)), int(index), maxcpa_del2[np.argmax(maxcpa_del2)]))
+                print("maxcpa del2 for", hex(np.argmax(maxcpa_del2)), hex(index), "=", maxcpa_del2[np.argmax(maxcpa_del2)])
 
                 
         
